@@ -286,7 +286,7 @@ button,input,select,textarea{font:inherit;color:inherit}
         <p class="muted" id="job-sub">Fill these in once. Every door line starts with the defaults below.</p>
       </div>
       <div class="actions" style="margin:0">
-        <button class="btn" type="button" id="btn-open-saved">Open a saved quote</button>
+        <button class="btn" type="button" id="btn-open-saved">Saved jobs</button>
         <button class="btn" type="button" id="btn-new-job">New job</button>
       </div>
     </div>
@@ -308,7 +308,7 @@ button,input,select,textarea{font:inherit;color:inherit}
         <div class="field"><label for="j-ref">Job reference</label><input id="j-ref" data-job="ref" placeholder="CHID26076" autocomplete="off"></div>
         <div class="field"><label for="j-name">Job name</label><input id="j-name" data-job="name" autocomplete="off"></div>
         <div class="field span-2"><label for="j-address">Site address</label><input id="j-address" data-job="address" autocomplete="off"></div>
-        <div class="field"><label for="j-company">Company name</label><input id="j-company" data-job="company" autocomplete="off"></div>
+        <div class="field"><label for="j-company">Company name</label><input id="j-company" data-job="company" autocomplete="off" list="company-list"><datalist id="company-list"></datalist></div>
         <div class="field"><label for="j-contact">Contact name</label><input id="j-contact" data-job="contact" autocomplete="off"></div>
         <div class="field span-2"><label for="j-email">Customer email</label><input id="j-email" type="email" data-job="email" autocomplete="off"></div>
       </div>
@@ -367,7 +367,8 @@ button,input,select,textarea{font:inherit;color:inherit}
    ========================================================= */
 const CONFIG = {
   GOOGLE_CLIENT_ID: '73736484901-gccag6fm1f5k13qnh0rk0k0m12b3llg7.apps.googleusercontent.com',
-  SPREADSHEET_NAME: 'CHI Door Calculator'
+  SPREADSHEET_NAME: 'CHI Door Calculator',
+  ROOT_FOLDER: 'CHI Doors'
 };
 
 const LOGO = 'data:image/png;base64,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';
@@ -684,62 +685,123 @@ function calcJob(){
 }
 
 /* ---------- Google connection ---------- */
-let tokenClient = null;
+let tokenClient = null, silentMode = false, pendingRefresh = null, refreshTimer = null;
 function isConfigured(){ return !/PASTE-YOUR-CLIENT-ID/.test(CONFIG.GOOGLE_CLIENT_ID); }
 function googleLoaded(){ return !!(window.google && google.accounts && google.accounts.oauth2); }
-
-function startGoogleSignIn(silent){
+function ensureClient(){
+  if (tokenClient) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.GOOGLE_CLIENT_ID, scope: SCOPE,
+    callback: onToken,
+    error_callback: err => {
+      if (pendingRefresh){ clearTimeout(pendingRefresh.t); pendingRefresh.rej(new Error('refresh failed')); pendingRefresh = null; return; }
+      if (silentMode){ silentMode = false; autoFailed(); return; }
+      signinMsg(err && err.type==='popup_closed' ? 'The Google window was closed before signing in.' : 'Google sign-in didn\u2019t complete. Check pop-ups are allowed and try again.');
+    }
+  });
+}
+/* mode: false = normal, true = reconnect, 'none' = silent attempt with no pop-up screens */
+function startGoogleSignIn(mode){
   if (!isConfigured()){ $('demo-box').classList.remove('hidden'); return; }
-  if (!googleLoaded()){ signinMsg('Google sign-in is still loading. Try again in a moment.'); return; }
-  if (!tokenClient){
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CONFIG.GOOGLE_CLIENT_ID, scope: SCOPE,
-      callback: onToken,
-      error_callback: err => signinMsg(err && err.type==='popup_closed' ? 'The Google window was closed before signing in.' : 'Google sign-in didn\u2019t complete. Check pop-ups are allowed and try again.')
-    });
-  }
-  tokenClient.requestAccessToken(silent ? {prompt:''} : {});
+  if (!googleLoaded()){ if (mode!=='none') signinMsg('Google sign-in is still loading. Try again in a moment.'); return; }
+  ensureClient();
+  silentMode = mode==='none';
+  const hint = load('chi.hint') || undefined;
+  tokenClient.requestAccessToken(mode==='none' ? {prompt:'none', hint} : mode ? {prompt:'', hint} : {hint});
+}
+function refreshSilent(){
+  return new Promise((res, rej)=>{
+    if (!isConfigured() || !googleLoaded()) return rej(new Error('Google not ready'));
+    ensureClient();
+    const t = setTimeout(()=>{ if (pendingRefresh){ pendingRefresh = null; rej(new Error('timeout')); } }, 8000);
+    pendingRefresh = {res, rej, t};
+    tokenClient.requestAccessToken({prompt:'none', hint: load('chi.hint') || undefined});
+  });
 }
 function signinMsg(t, warn=true){ const m=$('signin-msg'); m.textContent=t; m.classList.toggle('warn',warn); m.classList.remove('hidden'); }
+function autoFailed(){
+  signinMsg('Tap anywhere to sign in with Google.', false);
+  document.addEventListener('click', e=>{ if (state.token || e.target.closest('button')) return; startGoogleSignIn(true); }, {once:true});
+}
+function initAutoSignIn(){
+  if (!isConfigured() || !load('chi.auto')) return;
+  signinMsg('Signing you in\u2026', false);
+  let tries = 0;
+  const go = ()=>{ if (googleLoaded()) startGoogleSignIn('none'); else if (++tries < 40) setTimeout(go, 250); else autoFailed(); };
+  go();
+}
 
 async function onToken(resp){
-  if (resp.error){ signinMsg('Google sign-in didn\u2019t complete: ' + resp.error); return; }
+  if (resp.error){
+    if (pendingRefresh){ clearTimeout(pendingRefresh.t); pendingRefresh.rej(new Error(resp.error)); pendingRefresh = null; return; }
+    if (silentMode){ silentMode = false; autoFailed(); return; }
+    signinMsg('Google sign-in didn\u2019t complete: ' + resp.error); return;
+  }
   const wasConnected = !!state.sheetId;
   state.token = resp.access_token; state.mode = 'google';
   $('btn-reconnect').classList.add('hidden');
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(()=>refreshSilent().catch(()=>{}), Math.max(60, (Number(resp.expires_in)||3600) - 300) * 1000);
+  if (pendingRefresh){ clearTimeout(pendingRefresh.t); pendingRefresh.res(); pendingRefresh = null; return; }
+  silentMode = false;
   if (wasConnected){ toast('Reconnected to Google'); return; }
   try {
-    signinMsg('Connecting to your pricing spreadsheet…', false);
+    signinMsg('Connecting to your pricing spreadsheet\u2026', false);
     await connectSpreadsheet();
+    store('chi.auto', true);
+    try { const me = await api('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)'); if (me.user && me.user.emailAddress) store('chi.hint', me.user.emailAddress); } catch(e){}
     $('signin-msg').classList.add('hidden');
     afterLoad();
+    loadCompanies();
   } catch(e){ signinMsg(e.message || 'Couldn\u2019t open your pricing spreadsheet.'); }
 }
 
-async function api(url, opts={}){
+async function api(url, opts={}, retried=false){
+  if (!state.token){ try { await refreshSilent(); } catch(e){} }
   if (!state.token){ $('btn-reconnect').classList.remove('hidden'); throw new Error('Your Google sign-in has expired. Click Reconnect Google, then try again.'); }
   const res = await fetch(url, {...opts, headers:{'Authorization':'Bearer '+state.token, 'Content-Type':'application/json', ...(opts.headers||{})}});
-  if (res.status===401){ state.token=null; $('btn-reconnect').classList.remove('hidden'); throw new Error('Your Google sign-in has expired. Click Reconnect Google, then try again.'); }
+  if (res.status===401){
+    state.token = null;
+    if (!retried){ try { await refreshSilent(); return api(url, opts, true); } catch(e){} }
+    $('btn-reconnect').classList.remove('hidden'); throw new Error('Your Google sign-in has expired. Click Reconnect Google, then try again.');
+  }
   if (!res.ok){ let msg='Google returned an error ('+res.status+').'; try{ const j=await res.json(); if (j.error && j.error.message) msg='Google: '+j.error.message; }catch(e){} throw new Error(msg); }
   return res.status===204 ? null : res.json();
 }
 const rng = a => encodeURIComponent(a);
 
+const FOLDER_MIME = 'application/vnd.google-apps.folder';
+const qv = x => String(x).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+async function driveFind(q){ const r = await api(`${DRIVE}?q=${encodeURIComponent(q)}&fields=files(id,name,parents)&spaces=drive&pageSize=10`); return r.files || []; }
+async function ensureFolder(name, parent){
+  const found = await driveFind(`name='${qv(name)}' and mimeType='${FOLDER_MIME}' and trashed=false` + (parent ? ` and '${parent}' in parents` : ''));
+  if (found.length) return found[0].id;
+  const body = {name, mimeType:FOLDER_MIME}; if (parent) body.parents = [parent];
+  return (await api(`${DRIVE}?fields=id`, {method:'POST', body:JSON.stringify(body)})).id;
+}
+async function moveInto(id, folder, parents){
+  if (parents && parents.includes(folder)) return;
+  await api(`${DRIVE}/${id}?addParents=${folder}${parents && parents.length ? '&removeParents='+parents.join(',') : ''}&fields=id`, {method:'PATCH', body:'{}'});
+}
 async function connectSpreadsheet(){
-  const q = encodeURIComponent(`name='${CONFIG.SPREADSHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`);
-  const found = await api(`${DRIVE}?q=${q}&fields=files(id,name)&spaces=drive&pageSize=5`);
-  if (found.files && found.files.length){
-    state.sheetId = found.files[0].id;
+  state.rootId = await ensureFolder(CONFIG.ROOT_FOLDER, null);
+  const found = await driveFind(`name='${qv(CONFIG.SPREADSHEET_NAME)}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`);
+  if (found.length){
+    state.sheetId = found[0].id;
+    await moveInto(state.sheetId, state.rootId, found[0].parents);
     await readSettingsGoogle();
+    await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A1:M1')}?valueInputOption=RAW`, {method:'PUT', body:JSON.stringify({values:[QUOTE_HEADER]})});
   } else {
     const created = await api(SHEETS, {method:'POST', body:JSON.stringify({
       properties:{title:CONFIG.SPREADSHEET_NAME},
       sheets:['Pricing','Tracks','Business','Quotes'].map(t=>({properties:{title:t, gridProperties:{frozenRowCount:1}}}))})});
     state.sheetId = created.spreadsheetId;
+    const meta = await api(`${DRIVE}/${state.sheetId}?fields=parents`);
+    await moveInto(state.sheetId, state.rootId, meta.parents);
     state.pricing = defaultPricing(); state.tracks = DEFAULT_TRACKS.map(t=>({...t})); state.business = defaultBusiness();
     await writeSettingsGoogle();
-    await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A1:K1')}?valueInputOption=RAW`, {method:'PUT', body:JSON.stringify({values:[QUOTE_HEADER]})});
-    toast('Created "' + CONFIG.SPREADSHEET_NAME + '" in your Google Drive');
+    await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A1:M1')}?valueInputOption=RAW`, {method:'PUT', body:JSON.stringify({values:[QUOTE_HEADER]})});
+    toast('Created the "' + CONFIG.ROOT_FOLDER + '" folder in your Google Drive');
   }
 }
 
@@ -779,39 +841,81 @@ async function writeSettingsGoogle(){
     {range:'Pricing!A1', values:rows.pricing}, {range:'Tracks!A1', values:rows.tracks}, {range:'Business!A1', values:rows.business}]})});
 }
 
-const QUOTE_HEADER = ['Job ref','Job name','Company','Site address','Saved','Cost','Sell excl GST','GST','Total incl GST','Profit','Quote data'];
-function quoteRow(){
+const QUOTE_HEADER = ['Job ref','Job name','Company','Site address','Saved','Cost','Sell excl GST','GST','Total incl GST','Profit','Quote data','Drive folder ID','Quote PDF ID'];
+function quoteRow(folderId='', pdfId=''){
   const t = calcJob(), j = state.job;
-  return [j.ref, j.name, j.company, j.address, new Date().toLocaleString('en-NZ'), t.cost, t.sell, t.gst, t.total, t.profit, JSON.stringify(j)];
+  return [j.ref, j.name, j.company, j.address, new Date().toLocaleString('en-NZ'), t.cost, t.sell, t.gst, t.total, t.profit, JSON.stringify(j), folderId, pdfId];
+}
+async function quotePdfBlob(){
+  await loadPdfLib();
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;background:#fff';
+  holder.innerHTML = quoteHtml(); document.body.appendChild(holder);
+  try {
+    const el = holder.firstElementChild; el.classList.add('q-pdf');
+    return await html2pdf().set({
+      margin:[8,0,8,0], image:{type:'jpeg', quality:0.96},
+      html2canvas:{scale:2, backgroundColor:'#ffffff', scrollX:0, scrollY:0},
+      jsPDF:{unit:'mm', format:'a4', orientation:'portrait'},
+      pagebreak:{mode:['css','legacy'], avoid:['tr','.q-top','.q-parties','.q-totals','.q-term','.q-foot']}
+    }).from(el).outputPdf('blob');
+  } finally { holder.remove(); }
+}
+async function driveUpload(blob, name, parent, existingId){
+  if (existingId) return api(`https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=media&fields=id`, {method:'PATCH', headers:{'Content-Type':'application/pdf'}, body:blob});
+  const b = 'chi' + String(uid()).replace(/\W/g,'');
+  const meta = {name, parents:[parent], mimeType:'application/pdf'};
+  const body = new Blob([`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/pdf\r\n\r\n`, blob, `\r\n--${b}--`]);
+  return api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {method:'POST', headers:{'Content-Type':`multipart/related; boundary=${b}`}, body});
 }
 async function saveQuote(){
   const j = state.job;
   if (!j.ref.trim()){ toast('Add a job reference before saving.', true); return; }
-  const row = quoteRow();
+  const btn = $('btn-save-quote'), label = btn ? btn.textContent : '';
+  if (btn){ btn.disabled = true; btn.textContent = 'Saving\u2026'; }
   try {
     if (state.mode==='google'){
-      const col = await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A:A')}`);
+      const col = await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A:M')}`);
       const vals = col.values || [];
       const idx = vals.findIndex((v,i)=>i>0 && v[0]===j.ref);
-      if (idx>0) await api(`${SHEETS}/${state.sheetId}/values/${rng(`Quotes!A${idx+1}:K${idx+1}`)}?valueInputOption=RAW`, {method:'PUT', body:JSON.stringify({values:[row]})});
-      else await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A:K')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {method:'POST', body:JSON.stringify({values:[row]})});
-      toast(`Quote ${j.ref} saved to Drive`);
+      const old = idx>0 ? vals[idx] : [];
+      let folderId = old[11] || '', pdfId = old[12] || '', warn = '';
+      const folderName = safeName(`${j.ref} - ${j.name}`) || safeName(j.ref);
+      try {
+        const blob = await quotePdfBlob();
+        if (!folderId) folderId = await ensureFolder(folderName, state.rootId);
+        else { try { await api(`${DRIVE}/${folderId}?fields=id`, {method:'PATCH', body:JSON.stringify({name:folderName})}); } catch(e){} }
+        const qn = quoteFileName();
+        if (!pdfId){ const f = await driveFind(`name='${qv(qn)}' and '${folderId}' in parents and trashed=false`); if (f.length) pdfId = f[0].id; }
+        let up;
+        try { up = await driveUpload(blob, qn, folderId, pdfId); }
+        catch(e){ if (pdfId){ pdfId = ''; up = await driveUpload(blob, qn, folderId, ''); } else throw e; }
+        pdfId = (up && up.id) || pdfId;
+      } catch(e){ warn = e.message || 'The PDF couldn\u2019t be saved.'; }
+      const row = quoteRow(folderId, pdfId);
+      if (idx>0) await api(`${SHEETS}/${state.sheetId}/values/${rng(`Quotes!A${idx+1}:M${idx+1}`)}?valueInputOption=RAW`, {method:'PUT', body:JSON.stringify({values:[row]})});
+      else await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A:M')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {method:'POST', body:JSON.stringify({values:[row]})});
+      state.savedLoaded = false;
+      toast(warn ? `Job ${j.ref} saved, but the PDF wasn\u2019t: ${warn}` : `Saved to Drive: CHI Doors / ${folderName}`, !!warn);
     } else {
+      const row = quoteRow();
       const list = load('chi.device.quotes') || [];
       const i = list.findIndex(q=>q[0]===j.ref);
       if (i>=0) list[i]=row; else list.push(row);
-      store('chi.device.quotes', list);
+      store('chi.device.quotes', list); state.savedLoaded = false;
       toast(`Quote ${j.ref} saved on this device`);
     }
   } catch(e){ toast(e.message, true); }
+  if (btn){ btn.disabled = false; btn.textContent = label; }
 }
 async function listQuotes(){
   let rows;
   if (state.mode==='google'){
-    const res = await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A:K')}`);
+    const res = await api(`${SHEETS}/${state.sheetId}/values/${rng('Quotes!A:M')}?valueRenderOption=UNFORMATTED_VALUE`);
     rows = (res.values||[]).slice(1);
   } else rows = load('chi.device.quotes') || [];
-  return rows.filter(r=>r[0] && r[10]).map(r=>({ref:r[0], name:r[1], company:r[2], saved:r[4], data:r[10]})).reverse();
+  return rows.filter(r=>r[0] && r[10]).map(r=>({ref:String(r[0]), name:r[1], company:r[2], address:r[3], saved:r[4], cost:r[5], sell:r[6], gst:r[7], total:r[8], profit:r[9], data:r[10], folder:r[11], pdf:r[12]})).reverse();
 }
 
 /* ---------- Device mode (before Google is set up) ---------- */
@@ -877,7 +981,7 @@ function openApp(){
 }
 
 /* ---------- Tabs ---------- */
-const TABS = [['single','Singles'],['double','Doubles'],['cavity','Cavity sliders'],['wardrobe','Wardrobe sliders'],['hardware','Hardware'],['totals','Totals'],['settings','Settings']];
+const TABS = [['single','Singles'],['double','Doubles'],['cavity','Cavity sliders'],['wardrobe','Wardrobe sliders'],['hardware','Hardware'],['totals','Totals'],['saved','Saved jobs'],['settings','Settings']];
 function renderTabs(){
   $('tabs').innerHTML = TABS.map(([id,l])=>{
     const n = LINE_TYPES[id] ? state.job.lines[id].reduce((s,x)=>s+(Number(x.qty)||0),0) : id==='hardware' ? calcHardware().count : 0;
@@ -890,11 +994,12 @@ function setTab(id){
 }
 function renderTab(){
   const t = state.tab;
-  $('totals-bar').classList.toggle('hidden', t==='settings');
+  $('totals-bar').classList.toggle('hidden', t==='settings' || t==='saved');
   $('save-bar').classList.toggle('hidden', t!=='settings');
   if (LINE_TYPES[t]) renderLines(t);
   else if (t==='hardware') renderHardware();
   else if (t==='totals') renderTotals();
+  else if (t==='saved') renderSaved();
   else renderSettings();
 }
 
@@ -1221,25 +1326,67 @@ function updateTotalsBar(){
   $('tb-cost').textContent = money(t.cost); $('tb-profit').textContent = money(t.profit); $('tb-total').textContent = money(t.total);
 }
 
-/* ---------- Saved quotes ---------- */
-async function openSavedPanel(){
-  const panel = $('saved-panel'); panel.classList.remove('hidden');
-  $('saved-msg').textContent = 'Loading…'; $('saved-select').innerHTML = '';
-  try {
-    state.savedList = await listQuotes();
-    if (!state.savedList.length){ $('saved-msg').textContent = 'No saved quotes yet. Save one from the Totals tab.'; return; }
-    $('saved-msg').textContent = `${state.savedList.length} saved quote${state.savedList.length>1?'s':''}, newest first.`;
-    $('saved-select').innerHTML = state.savedList.map((q,i)=>`<option value="${i}">${esc(q.ref)}, ${esc(q.name)}${q.company?' ('+esc(q.company)+')':''}</option>`).join('');
-  } catch(e){ $('saved-msg').textContent = e.message; }
+/* ---------- Saved jobs tab ---------- */
+const companyKey = c => String(c||'').trim().toLowerCase() || '__none';
+async function loadCompanies(){
+  try { state.savedList = await listQuotes(); state.savedLoaded = true;
+    const names = new Map(); state.savedList.forEach(q=>{ const n=String(q.company||'').trim(); if (n && !names.has(n.toLowerCase())) names.set(n.toLowerCase(), n); });
+    let dl = $('company-list'); if (dl) dl.innerHTML = [...names.values()].sort().map(n=>`<option value="${esc(n)}">`).join('');
+  } catch(e){}
 }
-function loadSaved(){
-  const q = state.savedList[Number($('saved-select').value)]; if (!q) return;
+async function renderSaved(){
+  $('tab-content').innerHTML = `<div class="tab-head"><div><h1>Saved jobs</h1><p class="muted">Loading\u2026</p></div></div>`;
+  try { if (!state.savedLoaded){ state.savedList = await listQuotes(); state.savedLoaded = true; } }
+  catch(e){ $('tab-content').innerHTML = `<div class="tab-head"><div><h1>Saved jobs</h1><p class="muted">${esc(e.message)}</p></div></div>`; return; }
+  if (state.tab==='saved') drawSaved();
+}
+function savedDetailHtml(q){
+  let job = {}; try { job = JSON.parse(q.data); } catch(e){}
+  const counts = TYPE_ORDER.map(t=>{ const n = ((job.lines||{})[t]||[]).reduce((a,x)=>a+(Number(x.qty)||0),0); return n ? `<li>${esc(LINE_TYPES[t].title)}: <strong>${n}</strong></li>` : ''; }).join('');
+  const hw = Object.values(job.hardware||{}).reduce((a,x)=>a+(Number(x)||0),0);
+  const kv = [['Job reference',q.ref],['Job name',q.name],['Company',q.company],['Contact',job.contact],['Email',job.email],['Site address',job.address||q.address],['Quote date',job.date],['Last saved',q.saved]]
+    .filter(([,v])=>v).map(([k,v])=>`<div class="field"><span class="label">${k}</span><div>${esc(String(v))}</div></div>`).join('');
+  const m = v => money(Number(v)||0);
+  return `<div class="panel"><h2>${esc(q.ref)}, ${esc(q.name||'')}</h2>
+    <div class="grid-2" style="margin-top:12px">${kv}</div>
+    <h3 style="margin:18px 0 6px">What\u2019s on this quote</h3>
+    <ul style="margin:0 0 8px 18px">${counts}${hw?`<li>Hardware items: <strong>${hw}</strong></li>`:''}</ul>
+    <div class="grid-2"><div class="field"><span class="label">Cost</span><div>${m(q.cost)}</div></div><div class="field"><span class="label">Sell price excl GST</span><div>${m(q.sell)}</div></div>
+    <div class="field"><span class="label">GST</span><div>${m(q.gst)}</div></div><div class="field"><span class="label">Total incl GST</span><div><strong>${m(q.total)}</strong></div></div>
+    <div class="field"><span class="label">Profit</span><div>${m(q.profit)}</div></div></div>
+    <div class="actions" style="margin-top:16px">
+      <button class="btn btn-hivis" type="button" data-sj="open">Open this job</button>
+      ${q.folder?`<a class="btn" href="https://drive.google.com/drive/folders/${esc(String(q.folder))}" target="_blank" rel="noopener">Open Drive folder</a>`:''}
+      ${q.pdf?`<a class="btn" href="https://drive.google.com/file/d/${esc(String(q.pdf))}/view" target="_blank" rel="noopener">Open quote PDF</a>`:''}
+      <button class="btn btn-quiet" type="button" data-sj="close">Close</button></div>
+    ${q.folder?'':'<p class="muted small" style="margin-top:10px">No Drive folder yet. Open the job and save it again to create one.</p>'}</div>`;
+}
+function drawSaved(){
+  const list = state.savedList || [];
+  const comps = new Map();
+  list.forEach(q=>{ const k = companyKey(q.company); if (!comps.has(k)) comps.set(k, {name:String(q.company||'').trim() || '(No company)', n:0}); comps.get(k).n++; });
+  const sorted = [...comps.entries()].sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  const sel = state.savedCompany || '*';
+  let html = `<div class="tab-head"><div><h1>Saved jobs</h1><p class="muted">${list.length} saved job${list.length===1?'':'s'}. Pick a company to see the jobs for them.</p></div><button class="btn" type="button" data-sj="refresh">Refresh</button></div>`;
+  if (!list.length){ $('tab-content').innerHTML = html + `<div class="panel"><p class="muted">No saved jobs yet. Save a quote from the Totals tab and it will show up here.</p></div>`; return; }
+  html += `<div class="panel"><div class="field" style="max-width:420px"><label for="saved-company">Company</label><select id="saved-company"><option value="*"${sel==='*'?' selected':''}>All companies (${list.length})</option>${sorted.map(([k,c])=>`<option value="${esc(k)}"${k===sel?' selected':''}>${esc(c.name)} (${c.n})</option>`).join('')}</select></div></div>`;
+  if (state.savedSel!=null && list[state.savedSel]) html += savedDetailHtml(list[state.savedSel]);
+  const shown = list.map((q,i)=>({q,i})).filter(x=>sel==='*' || companyKey(x.q.company)===sel);
+  html += shown.map(({q,i})=>`<div class="panel" style="padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px"><strong>${esc(q.ref)}</strong>, ${esc(q.name||'')}${sel==='*'&&q.company?` <span class="muted">(${esc(q.company)})</span>`:''}<br><span class="muted small">${esc([q.address, q.saved].filter(Boolean).join(' \u00b7 '))}</span></div>
+    <div><strong>${money(Number(q.total)||0)}</strong><div class="muted small">incl GST</div></div>
+    <button class="btn" type="button" data-sj="view" data-i="${i}">View</button></div>`).join('');
+  $('tab-content').innerHTML = html;
+}
+function openSavedJob(q){
+  if (!q) return;
+  const cur = state.job, has = TYPE_ORDER.some(t=>cur.lines[t].length);
+  if (has && cur.ref!==q.ref && !confirm('Open this job? Anything unsaved on the current quote will be replaced.')) return;
   try {
-    const job = JSON.parse(q.data);
-    const base = newJob();
+    const job = JSON.parse(q.data), base = newJob();
     state.job = {...base, ...job, lines:{...base.lines, ...(job.lines||{})}, delivery:{...base.delivery, ...(job.delivery||{})}, hardware:{...(job.hardware||{})}};
-    persistJob(); $('saved-panel').classList.add('hidden'); renderJobScreen(); toast(`Opened ${q.ref}`);
-  } catch(e){ toast('That saved quote couldn\u2019t be read.', true); }
+    persistJob(); state.tab = 'totals'; renderJobScreen(); openApp(); toast(`Opened ${q.ref}`);
+  } catch(e){ toast('That saved job couldn\u2019t be read.', true); }
 }
 
 /* ---------- Events ---------- */
@@ -1257,9 +1404,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (has && !confirm('Start a new job? Save this quote first if you want to keep it.')) return;
     state.job = newJob(); state.tab = 'single'; persistJob(); renderJobScreen();
   });
-  $('btn-open-saved').addEventListener('click', openSavedPanel);
-  $('btn-close-saved').addEventListener('click', ()=>$('saved-panel').classList.add('hidden'));
-  $('btn-load-saved').addEventListener('click', loadSaved);
+  $('btn-open-saved').addEventListener('click', ()=>{ state.tab='saved'; openApp(); });
+  $('tab-content').addEventListener('change', e=>{ if (e.target.id==='saved-company'){ state.savedCompany = e.target.value; state.savedSel = null; drawSaved(); } });
+  $('tab-content').addEventListener('click', e=>{
+    const b = e.target.closest('[data-sj]'); if (!b) return;
+    const a = b.dataset.sj;
+    if (a==='view'){ state.savedSel = Number(b.dataset.i); drawSaved(); window.scrollTo(0,0); }
+    else if (a==='close'){ state.savedSel = null; drawSaved(); }
+    else if (a==='open') openSavedJob(state.savedList[state.savedSel]);
+    else if (a==='refresh'){ state.savedLoaded = false; renderSaved(); }
+  });
   $('tabs').addEventListener('click', e=>{ const b=e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
   $('btn-save-settings').addEventListener('click', saveSettings);
 
@@ -1300,6 +1454,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   if (!isConfigured()) $('demo-box').classList.remove('hidden');
   showScreen('screen-signin');
+  initAutoSignIn();
 });
 </script>
 <script>
