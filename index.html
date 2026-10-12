@@ -461,7 +461,8 @@ const BUSINESS_FIELDS = [
   {key:'phone', label:'Phone (shows on quotes)', type:'text', def:''},
   {key:'email', label:'Email (shows on quotes)', type:'text', def:''},
   {key:'paymentTerms', label:'Payment terms', type:'text', def:''},
-  {key:'damageWindow', label:'Time to report delivery damage', type:'text', def:'48 hours'}
+  {key:'damageWindow', label:'Time to report delivery damage', type:'text', def:'48 hours'},
+  {key:'leadTime', label:'Lead time (shows on quotes)', type:'text', def:'4 weeks'}
 ];
 const DEFAULT_TRACKS = [1200,1500,1800,2100,2400].map(l=>({type:'double', length:l, value:0, markup:null}));
 
@@ -1133,6 +1134,7 @@ function quoteHtml(){
   if (j.delivery.mode!=='none') items.push({title:'Delivery', spec: j.delivery.mode==='hamilton' ? 'Hamilton' : (j.delivery.place||'Out of town'), qty:1, sell:t.delivery.sell});
   const terms = [
     `This quote is valid for ${esc(b.validDays||30)} days from the date above. After that, prices may change in line with supplier costs.`,
+    b.leadTime ? `Our lead time is ${esc(b.leadTime)} from acceptance of this quote. Delivery dates are confirmed once the quote is accepted.` : null,
     'Doors are made to order. Please check sizes, handing and quantities before accepting, as made doors can\u2019t be returned.',
     'Anything not listed on this quote is excluded. Changes after acceptance will be charged as a variation.',
     'Goods remain the property of CH Industries until paid for in full.',
@@ -1149,7 +1151,7 @@ function quoteHtml(){
         <div class="q-meta"><div class="q-title">QUOTE</div>
           <div class="q-ref">Job ref. ${esc(j.ref)}</div>
           <div class="q-date">Date ${fmtDate(j.date)}</div>
-          <div class="q-date">Valid until ${fmtDate(j.date, b.validDays||30)}</div></div>
+          <div class="q-date">Valid until ${fmtDate(j.date, b.validDays||30)}</div>${b.leadTime?`<div class="q-date">Lead time ${esc(b.leadTime)} from acceptance</div>`:''}</div>
       </div>
       <div class="q-bar"></div>
       <div class="q-parties">
