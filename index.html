@@ -442,6 +442,9 @@ const SCHEMA = (() => {
     {title:'Wardrobe slider handles', rows:['round','rect'].map(k=>m(`whandle.${k}`,WARDROBE_HANDLES[k],'each'))},
     {title:'Door stops', rows:[m('doorstop','Door stop','each')]}]});
 
+  S.push({id:'magnets', title:'Magnets', note:'The magnet cost is built into the price of double doors and single dummy doors. It doesn\u2019t show as a separate item on the quote.', groups:[
+    {rows:[m('magnet','Magnet','each')]},
+    {title:'Magnets per door', rows:[n('magnet.qty.double','Double doors (per pair)','magnets',4), n('magnet.qty.dummy','Single dummy door','magnets',2)]}]});
   S.push({id:'cavity', title:'Cavity sliders', note:'Soft close kit, cavity units and steel inserts for each cavity supplier. Units and steel inserts are priced by height and by plain or grooved. Pick the supplier on each cavity slider line.', groups:[
     {title:'Soft close kits', rows:Object.entries(CAVITY_SUPPLIERS).map(([cs,cl])=>m(`cavity.${cs}.softClose`,`${cl} soft close kit`))},
     ...Object.entries(CAVITY_SUPPLIERS).flatMap(([cs,cl])=>[
@@ -547,12 +550,12 @@ function doorKey(st,h){ return isCustom(st) ? st : `door.${state.job.supplier}.$
 function jambKey(j, framing){ return framing==='6x2' ? `jamb.${j}.6x2` : `jamb.${j}`; }
 const hingedStyle = {f:'style',label:'Door',inherit:true,choices:()=>({...DOOR_STYLES, ...customChoices()})};
 const LINE_TYPES = {
-  single: {title:'Singles', one:'single door', addLabel:'Add single door line', intro:'Single hinged doors. Handles and door stops go on the Hardware tab.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',colour:null}),
+  single: {title:'Singles', one:'single door', addLabel:'Add single door line', intro:'Single hinged doors. Handles and door stops go on the Hardware tab. Set Dummy door to Yes for doors held shut with magnets.',
+    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',dummy:'no',colour:null}),
     fields:[
       {f:'qty',label:'Quantity',kind:'int',min:1},
       {f:'height',label:'Height',inherit:true},hingedStyle,{f:'jamb',label:'Jamb',inherit:true},
-      {f:'framing',label:'Framing',opts:FRAMINGS},{f:'colour',label:'Hinge colour',inherit:true}]},
+      {f:'framing',label:'Framing',opts:FRAMINGS},{f:'dummy',label:'Dummy door (magnets)',opts:YESNO},{f:'colour',label:'Hinge colour',inherit:true}]},
   double: {title:'Doubles', one:'double door', addLabel:'Add double door line', intro:'Pairs of hinged doors, including double wardrobe doors.',
     blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',colour:null}),
     fields:[
@@ -586,6 +589,8 @@ function calcLine(type, line){
     add(a, jambKey(j,line.framing), val(`m.jamb.${type}.${h}`));
     add(a, 'stop.perMetre', val(`m.stop.${type}.${h}`));
     add(a, `hinge.${r(line,'colour')}`, val(`hinge.qty.${h}`)*leaves);
+    if (type==='double') add(a, 'magnet', val('magnet.qty.double'));
+    else if (line.dummy==='yes') add(a, 'magnet', val('magnet.qty.dummy'));
     add(a, `labour.${type}.${h}`, 1);
     if (j==='grooved30') add(a, `labour.groovedJamb.${type}`, 1);
   } else if (type==='cavity'){
@@ -628,7 +633,7 @@ function describeLine(type, line, withHardware=true){
   const h = r(line,'height'), st = r(line,'style'), col = COLOURS[r(line,'colour')];
   const fr = line.framing==='6x2' ? '6x2 framing' : null;
   if (type==='single' || type==='double'){
-    const bits = [styleText(st, type==='double'), JAMBS[r(line,'jamb')], fr, `${col} hinges`].filter(Boolean);
+    const bits = [styleText(st, type==='double'), type==='single' && line.dummy==='yes' ? 'Dummy door' : null, JAMBS[r(line,'jamb')], fr, `${col} hinges`].filter(Boolean);
     return {title:`${type==='double'?'Double hinged doors':'Single hinged door'}, ${h}H`, spec:bits.join(' \u00b7 ')};
   }
   if (type==='cavity'){
