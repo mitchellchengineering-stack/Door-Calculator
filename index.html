@@ -157,6 +157,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .track-row{display:grid;grid-template-columns:150px 130px minmax(0,1fr) 110px 44px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule)}
 .track-row select,.track-row input{min-height:40px;padding:6px 10px;border:1px solid var(--field);border-radius:4px;width:100%;background:var(--white)}
 .track-row input{text-align:right}
+.cd-row{display:grid;grid-template-columns:minmax(0,1fr) 130px 110px 44px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule)}
+.cd-row input{min-height:40px;padding:6px 10px;border:1px solid var(--field);border-radius:4px;width:100%;background:var(--white)}
+.cd-row .money-input input{padding-left:22px}
+.cd-row input.num{text-align:right}
 .icon-btn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:4px;background:none;cursor:pointer}
 .icon-btn:hover{border-color:var(--rule);background:#F0F0ED}
 .save-bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink);color:var(--white);padding-bottom:env(safe-area-inset-bottom)}
@@ -235,6 +239,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   .line-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
   .set-head,.set-row{grid-template-columns:minmax(0,1fr) 110px 76px;gap:8px}
   .track-row{grid-template-columns:1fr 1fr;}
+  .cd-row{grid-template-columns:1fr 1fr}
   .tb-total strong{font-size:22px}
   .totals-bar-row{gap:14px;padding:8px 14px}
 }
@@ -382,6 +387,9 @@ const COMPANY_ADDRESS = '8 Wickham Street, Frankton, Hamilton 3204';
 const HEIGHTS = {'1980':'1980H','2200':'2200H','2400':'2400H'};
 const SUPPLIERS = {superior:'Superior', humes:'Humes'};
 const STYLES = {plain:'Plain', grooved:'Grooved'};
+const DOOR_STYLES = {...STYLES, insulated:'Insulated'};
+const CAVITY_SUPPLIERS = {humes:'Humes', cowdroy:'Cowdroy'};
+const FRAMINGS = {'4x2':'4x2 (standard)', '6x2':'6x2'};
 const JAMBS = {flat18:'18mm flat jamb', grooved30:'30mm grooved jamb'};
 const COLOURS = {matteBlack:'Matte black', gunmetal:'Gun metal grey', brushedNickel:'Brushed nickel'};
 const RANGES = {halo:'Halo', futura:'Futura', galaxy:'Galaxy'};
@@ -402,15 +410,16 @@ const SCHEMA = (() => {
   const m = (key,label,unit='each') => ({key,label,kind:'money',unit});
   const n = (key,label,unit,def) => ({key,label,kind:'number',unit,def});
   const doors = [];
-  for (const [s,sl] of Object.entries(SUPPLIERS)) for (const h of HKEYS) for (const [st,stl] of Object.entries(STYLES))
+  for (const [s,sl] of Object.entries(SUPPLIERS)) for (const h of HKEYS) for (const [st,stl] of Object.entries(DOOR_STYLES))
     doors.push(m(`door.${s}.${h}.${st}`, `${sl} ${h}H ${stl.toLowerCase()} door`));
-  S.push({id:'doors', title:'Doors', note:'What each supplier charges you per door.', groups:[{rows:doors}]});
+  S.push({id:'doors', title:'Doors', note:'What each supplier charges you per door. Use Extra doors at the bottom for any other door you need.', groups:[{rows:doors}], customDoors:true});
 
   S.push({id:'jambs', title:'Jambs and stops', note:'Price per lineal metre.', groups:[{rows:[
-    m('jamb.flat18','18mm flat jamb','per metre'), m('jamb.grooved30','30mm grooved jamb','per metre'),
-    m('jamb.wardrobe','Wardrobe jamb','per metre'), m('stop.perMetre','Jamb stops','per metre')]}]});
+    m('jamb.flat18','18mm flat jamb, 4x2 framing','per metre'), m('jamb.grooved30','30mm grooved jamb, 4x2 framing','per metre'),
+    m('jamb.flat18.6x2','18mm flat jamb, 6x2 framing','per metre'), m('jamb.grooved30.6x2','30mm grooved jamb, 6x2 framing','per metre'),
+    m('stop.perMetre','Jamb stops','per metre')]}]});
 
-  S.push({id:'metres', title:'Metres per opening', note:'Metres of jamb and jamb stops each opening uses, including your head and offcut allowance. Wardrobe sliders use the double door jamb metres.', groups:[
+  S.push({id:'metres', title:'Metres per opening', note:'Metres of jamb and jamb stops each opening uses, including your head and offcut allowance. 6x2 jambs use the same metres. Wardrobe sliders use the double door jamb metres and the same jamb prices as singles and doubles.', groups:[
     {title:'Jamb', rows:[
       ...HKEYS.map(h=>n(`m.jamb.single.${h}`,`Single ${h}H`,'metres',jm(h,1))),
       ...HKEYS.map(h=>n(`m.jamb.double.${h}`,`Double ${h}H`,'metres',jm(h,2))),
@@ -433,13 +442,15 @@ const SCHEMA = (() => {
     {title:'Wardrobe slider handles', rows:['round','rect'].map(k=>m(`whandle.${k}`,WARDROBE_HANDLES[k],'each'))},
     {title:'Door stops', rows:[m('doorstop','Door stop','each')]}]});
 
-  S.push({id:'cavity', title:'Cavity sliders', note:'Soft close kit, cavity units and steel inserts. Units and steel inserts are priced by height and by plain or grooved.', groups:[{rows:[
-    m('cavity.softClose','Soft close kit')]},
-    {title:'Cavity slider units', rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.unit.${h}.${st}`,`${h}H ${sl.toLowerCase()}`)))},
-    {title:'Steel inserts', rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.steel.${h}.${st}`,`${h}H ${sl.toLowerCase()} door`,'per door')))}]});
+  S.push({id:'cavity', title:'Cavity sliders', note:'Soft close kit, cavity units and steel inserts for each cavity supplier. Units and steel inserts are priced by height and by plain or grooved. Pick the supplier on each cavity slider line.', groups:[
+    {title:'Soft close kits', rows:Object.entries(CAVITY_SUPPLIERS).map(([cs,cl])=>m(`cavity.${cs}.softClose`,`${cl} soft close kit`))},
+    ...Object.entries(CAVITY_SUPPLIERS).flatMap(([cs,cl])=>[
+      {title:`${cl} cavity slider units`, rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.${cs}.unit.${h}.${st}`,`${h}H ${sl.toLowerCase()}`)))},
+      {title:`${cl} steel inserts`, rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.${cs}.steel.${h}.${st}`,`${h}H ${sl.toLowerCase()} door`,'per door')))}])]});
 
-  S.push({id:'wardrobe', title:'Wardrobe sliders', note:'Routing fee and Robemaker tracks. Add triple track lengths once you\u2019ve confirmed them with your supplier.', groups:[{rows:[
-    m('wardrobe.routing','Routing for wheels','per door')]}], tracks:true});
+  S.push({id:'wardrobe', title:'Wardrobe sliders', note:'Routing fee for each supplier, bottom packers and Robemaker tracks. Add triple track lengths once you\u2019ve confirmed them with your supplier.', groups:[{rows:[
+    m('wardrobe.routing.superior','Routing for wheels, Superior','per door'), m('wardrobe.routing.humes','Routing for wheels, Humes','per door'),
+    m('packer.double','Wardrobe jamb bottom packer, double slider','per opening'), m('packer.triple','Wardrobe jamb bottom packer, triple slider','per opening')]}], tracks:true});
 
   S.push({id:'labour', title:'Labour', note:'What each job costs you in labour. Your markup is added on top.', groups:[
     {title:'Hinged doors', rows:[...HKEYS.map(h=>m(`labour.single.${h}`,`Single ${h}H`,'per door')), ...HKEYS.map(h=>m(`labour.double.${h}`,`Double ${h}H`,'per pair'))]},
@@ -516,7 +527,7 @@ function add(acc, key, qty){
   qty = Number(qty)||0; if (qty<=0) return;
   const c = val(key)*qty;
   acc.cost += c; acc.sell += c*(1+markupOf(P(key))/100);
-  if (val(key)===0) acc.missing.add(SCHEMA_ROWS[key] ? SCHEMA_ROWS[key].label : key);
+  if (val(key)===0) acc.missing.add(SCHEMA_ROWS[key] ? SCHEMA_ROWS[key].label : ((state.pricing[key] && state.pricing[key].name) || key));
 }
 function addRaw(acc, cost, markupEntry, label){
   acc.cost += cost; acc.sell += cost*(1+markupOf(markupEntry)/100);
@@ -529,30 +540,38 @@ const JOB_DEFAULT_FIELDS = {height:HEIGHTS, style:STYLES, jamb:JAMBS, colour:COL
 function r(line, f){ return (line[f]===null || line[f]===undefined || line[f]==='') ? state.job[f] : line[f]; }
 function tracksOf(type){ return state.tracks.filter(t=>t.type===type && Number(t.length)>0).sort((a,b)=>a.length-b.length); }
 
+const isCustom = s => String(s||'').indexOf('custom.door.')===0;
+function customDoors(){ return Object.entries(state.pricing).filter(([k])=>isCustom(k)).map(([k,q])=>({key:k, name:q.name||'Unnamed door'})); }
+function customChoices(){ const o = {}; customDoors().forEach(d=>{ o[d.key] = d.name; }); return o; }
+function doorKey(st,h){ return isCustom(st) ? st : `door.${state.job.supplier}.${h}.${st}`; }
+function jambKey(j, framing){ return framing==='6x2' ? `jamb.${j}.6x2` : `jamb.${j}`; }
+const hingedStyle = {f:'style',label:'Door',inherit:true,choices:()=>({...DOOR_STYLES, ...customChoices()})};
 const LINE_TYPES = {
   single: {title:'Singles', one:'single door', addLabel:'Add single door line', intro:'Single hinged doors. Handles and door stops go on the Hardware tab.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,colour:null}),
+    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',colour:null}),
     fields:[
       {f:'qty',label:'Quantity',kind:'int',min:1},
-      {f:'height',label:'Height',inherit:true},{f:'style',label:'Door',inherit:true},{f:'jamb',label:'Jamb',inherit:true},
-      {f:'colour',label:'Hinge colour',inherit:true}]},
+      {f:'height',label:'Height',inherit:true},hingedStyle,{f:'jamb',label:'Jamb',inherit:true},
+      {f:'framing',label:'Framing',opts:FRAMINGS},{f:'colour',label:'Hinge colour',inherit:true}]},
   double: {title:'Doubles', one:'double door', addLabel:'Add double door line', intro:'Pairs of hinged doors, including double wardrobe doors.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,colour:null}),
+    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',colour:null}),
     fields:[
       {f:'qty',label:'Quantity (pairs)',kind:'int',min:1},
-      {f:'height',label:'Height',inherit:true},{f:'style',label:'Doors',inherit:true},{f:'jamb',label:'Jamb',inherit:true},
-      {f:'colour',label:'Hinge colour',inherit:true}]},
-  cavity: {title:'Cavity sliders', one:'cavity slider', addLabel:'Add cavity slider line', intro:'Pick the cropping for the handle that will be fitted. The handles themselves go on the Hardware tab.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,softClose:'no',steel:'no',handle:'roundPassage'}),
+      {f:'height',label:'Height',inherit:true},{...hingedStyle,label:'Doors'},{f:'jamb',label:'Jamb',inherit:true},
+      {f:'framing',label:'Framing',opts:FRAMINGS},{f:'colour',label:'Hinge colour',inherit:true}]},
+  cavity: {title:'Cavity sliders', one:'cavity slider', addLabel:'Add cavity slider line', intro:'Pick the cavity supplier and the cropping for the handle that will be fitted. The handles themselves go on the Hardware tab.',
+    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',cavSupplier:'humes',softClose:'no',steel:'no',handle:'roundPassage'}),
     fields:[
-      {f:'qty',label:'Quantity',kind:'int',min:1},
+      {f:'qty',label:'Quantity',kind:'int',min:1},{f:'cavSupplier',label:'Cavity supplier',opts:CAVITY_SUPPLIERS},
       {f:'height',label:'Height',inherit:true},{f:'style',label:'Door',inherit:true},{f:'jamb',label:'Jamb',inherit:true},
+      {f:'framing',label:'Framing',opts:FRAMINGS},
       {f:'softClose',label:'Soft close',opts:YESNO},{f:'steel',label:'Steel insert',opts:YESNO},{f:'handle',label:'Cropping',opts:CAVITY_CROPS}]},
-  wardrobe: {title:'Wardrobe sliders', one:'wardrobe slider', addLabel:'Add wardrobe slider line', intro:'Doors, wardrobe jamb and a Robemaker track. Pick the cropping here; the handles go on the Hardware tab.',
-    blank:()=>({qty:1,height:null,style:null,doors:'2',track:'double',trackLength:null,handle:'round'}),
+  wardrobe: {title:'Wardrobe sliders', one:'wardrobe slider', addLabel:'Add wardrobe slider line', intro:'Doors, jamb, bottom packer and a Robemaker track. Routing is priced by the door supplier on Job details. Pick the cropping here; the handles go on the Hardware tab.',
+    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',doors:'2',track:'double',trackLength:null,handle:'round'}),
     fields:[
       {f:'qty',label:'Openings',kind:'int',min:1},
-      {f:'height',label:'Height',inherit:true},{f:'style',label:'Doors',inherit:true},
+      {f:'height',label:'Height',inherit:true},{f:'style',label:'Doors',inherit:true,choices:()=>({...STYLES, ...customChoices()})},
+      {f:'jamb',label:'Jamb',inherit:true},{f:'framing',label:'Framing',opts:FRAMINGS},
       {f:'doors',label:'Doors per opening',opts:DOOR_COUNTS},{f:'track',label:'Track',opts:TRACK_TYPES},
       {f:'trackLength',label:'Track length',kind:'track'},{f:'handle',label:'Cropping',opts:WARDROBE_CROPS}]}
 };
@@ -563,29 +582,31 @@ function calcLine(type, line){
   const h = r(line,'height'), st = r(line,'style');
   if (type==='single' || type==='double'){
     const leaves = type==='double' ? 2 : 1, j = r(line,'jamb');
-    add(a, `door.${job.supplier}.${h}.${st}`, leaves);
-    add(a, `jamb.${j}`, val(`m.jamb.${type}.${h}`));
+    add(a, doorKey(st,h), leaves);
+    add(a, jambKey(j,line.framing), val(`m.jamb.${type}.${h}`));
     add(a, 'stop.perMetre', val(`m.stop.${type}.${h}`));
     add(a, `hinge.${r(line,'colour')}`, val(`hinge.qty.${h}`)*leaves);
     add(a, `labour.${type}.${h}`, 1);
     if (j==='grooved30') add(a, `labour.groovedJamb.${type}`, 1);
   } else if (type==='cavity'){
     const j = r(line,'jamb');
-    add(a, `door.${job.supplier}.${h}.${st}`, 1);
-    add(a, `cavity.unit.${h}.${st}`, 1);
-    if (line.steel==='yes') add(a, `cavity.steel.${h}.${st}`, 1);
-    add(a, `jamb.${j}`, val(`m.jamb.cavity.${h}`));
+    const cs = line.cavSupplier==='cowdroy' ? 'cowdroy' : 'humes';
+    add(a, doorKey(st,h), 1);
+    add(a, `cavity.${cs}.unit.${h}.${st}`, 1);
+    if (line.steel==='yes') add(a, `cavity.${cs}.steel.${h}.${st}`, 1);
+    add(a, jambKey(j,line.framing), val(`m.jamb.cavity.${h}`));
     add(a, 'stop.perMetre', val(`m.stop.cavity.${h}`));
-    if (line.softClose==='yes'){ add(a,'cavity.softClose',1); add(a,`labour.softClose.${h}`,1); }
+    if (line.softClose==='yes'){ add(a,`cavity.${cs}.softClose`,1); add(a,`labour.softClose.${h}`,1); }
     if (line.handle && line.handle !== 'none') add(a, `crop.cavity.${line.handle}`, 1);
     add(a, `labour.cavity.${h}`, 1);
     if (j==='grooved30') add(a, 'labour.groovedJamb.cavity', 1);
   } else if (type==='wardrobe'){
     const d = Number(line.doors)||2;
-    add(a, `door.${job.supplier}.${h}.${st}`, d);
-    add(a, 'wardrobe.routing', d);
-    add(a, 'jamb.wardrobe', val(`m.jamb.double.${h}`));
+    add(a, doorKey(st,h), d);
+    add(a, `wardrobe.routing.${job.supplier}`, d);
+    add(a, jambKey(r(line,'jamb'), line.framing), val(`m.jamb.double.${h}`));
     add(a, 'stop.perMetre', val('m.stop.wardrobe'));
+    add(a, `packer.${line.track==='triple' ? 'triple' : 'double'}`, 1);
     const tr = selectedTrack(line);
     if (tr) addRaw(a, Number(tr.value)||0, tr, `${TRACK_TYPES[tr.type]} ${tr.length}`);
     else a.missing.add(`${TRACK_TYPES[line.track]} length (add one in Settings)`);
@@ -599,21 +620,26 @@ function selectedTrack(line){
   return list.find(t=>String(t.length)===String(line.trackLength)) || list[0] || null;
 }
 
+function styleText(st, plural){
+  if (isCustom(st)) return (state.pricing[st] && state.pricing[st].name) || 'Extra door';
+  return `${DOOR_STYLES[st]||st} ${plural?'doors':'door'}`;
+}
 function describeLine(type, line, withHardware=true){
-  const h = r(line,'height'), st = STYLES[r(line,'style')], col = COLOURS[r(line,'colour')];
+  const h = r(line,'height'), st = r(line,'style'), col = COLOURS[r(line,'colour')];
+  const fr = line.framing==='6x2' ? '6x2 framing' : null;
   if (type==='single' || type==='double'){
-    const bits = [`${st} ${type==='double'?'doors':'door'}`, JAMBS[r(line,'jamb')], `${col} hinges`];
-    return {title:`${type==='double'?'Double hinged doors':'Single hinged door'}, ${h}H`, spec:bits.join(' · ')};
+    const bits = [styleText(st, type==='double'), JAMBS[r(line,'jamb')], fr, `${col} hinges`].filter(Boolean);
+    return {title:`${type==='double'?'Double hinged doors':'Single hinged door'}, ${h}H`, spec:bits.join(' \u00b7 ')};
   }
   if (type==='cavity'){
-    const bits = [`${st} door`, JAMBS[r(line,'jamb')]];
+    const bits = [styleText(st, false), JAMBS[r(line,'jamb')], fr];
     if (line.softClose==='yes') bits.push('Soft close');
     if (line.steel==='yes') bits.push('Steel insert');
-    return {title:`Cavity slider, ${h}H`, spec:bits.join(' · ')};
+    return {title:`Cavity slider, ${h}H`, spec:bits.filter(Boolean).join(' \u00b7 ')};
   }
   const tr = selectedTrack(line);
-  const bits = [`${st} doors`, tr ? `${tr.length} ${TRACK_TYPES[tr.type].toLowerCase()}` : TRACK_TYPES[line.track]];
-  return {title:`Wardrobe slider, ${line.doors} doors, ${h}H`, spec:bits.join(' · ')};
+  const bits = [styleText(st, true), JAMBS[r(line,'jamb')], fr, tr ? `${tr.length} ${TRACK_TYPES[tr.type].toLowerCase()}` : TRACK_TYPES[line.track]].filter(Boolean);
+  return {title:`Wardrobe slider, ${line.doors} doors, ${h}H`, spec:bits.join(' \u00b7 ')};
 }
 
 /* ---------- Hardware tab ---------- */
@@ -812,6 +838,10 @@ function settingsToRows(){
     const p = P(row.key);
     pricing.push([row.key, s.title + (g.title?' / '+g.title:''), row.label, Number(p.value)||0, row.kind==='money' && p.markup!==null && p.markup!=='' ? Number(p.markup) : '', row.kind==='money' ? row.unit : row.unit]);
   })));
+  Object.keys(state.pricing).filter(k=>k.indexOf('custom.door.')===0).forEach(k=>{
+    const q = state.pricing[k];
+    pricing.push([k, 'Doors / Extra doors', q.name||'', Number(q.value)||0, q.markup!==null && q.markup!==undefined && q.markup!=='' ? Number(q.markup) : '', 'each']);
+  });
   const tracks = [['Track type','Length (mm)','Cost (excl GST)','Markup %']].concat(
     state.tracks.map(t=>[t.type, Number(t.length)||0, Number(t.value)||0, t.markup!==null && t.markup!=='' ? Number(t.markup) : '']));
   const business = [['Setting','Value']].concat(BUSINESS_FIELDS.map(f=>[f.key, state.business[f.key] ?? '']));
@@ -820,8 +850,17 @@ function settingsToRows(){
 function rowsToSettings(pricingRows, trackRows, businessRows){
   const p = defaultPricing();
   (pricingRows||[]).slice(1).forEach(row=>{
-    const [key,, , value, markup] = row;
-    if (key && p[key]) p[key] = {value: value===''||value===undefined ? p[key].value : Number(value)||0, markup: markup===''||markup===undefined ? null : Number(markup)};
+    const [key,, name, value, markup] = row;
+    const mk = markup===''||markup===undefined ? null : Number(markup);
+    if (key && p[key]) p[key] = {value: value===''||value===undefined ? p[key].value : Number(value)||0, markup: mk};
+    else if (key && String(key).indexOf('custom.door.')===0) p[key] = {value:Number(value)||0, markup:mk, name:String(name||'')};
+    else if (key && value!=='' && value!==undefined){
+      /* old single prices carry over: routing to both suppliers, cavity prices to Humes */
+      let targets = [];
+      if (key==='wardrobe.routing') targets = ['wardrobe.routing.superior','wardrobe.routing.humes'];
+      else if (/^cavity\.(softClose|unit\.|steel\.)/.test(key)) targets = [key.replace('cavity.','cavity.humes.')];
+      targets.forEach(t=>{ if (p[t]) p[t] = {value:Number(value)||0, markup:mk}; });
+    }
   });
   const tracks = (trackRows||[]).slice(1).filter(r=>r[0]).map(r=>({type:r[0]==='triple'?'triple':'double', length:Number(r[1])||0, value:Number(r[2])||0, markup:r[3]===''||r[3]===undefined?null:Number(r[3])}));
   const b = defaultBusiness();
@@ -1041,7 +1080,7 @@ function fieldHtml(type,line,fd){
   const id = `f-${line.id}-${fd.f}`, attrs = `data-line="${line.id}" data-type="${type}" data-field="${fd.f}"`;
   if (fd.kind==='int') return `<div class="field"><label for="${id}">${fd.label}</label><input id="${id}" type="number" inputmode="numeric" min="${fd.min}" step="1" value="${esc(line[fd.f])}" ${attrs}></div>`;
   if (fd.inherit){
-    const opts = JOB_DEFAULT_FIELDS[fd.f], jobVal = state.job[fd.f];
+    const opts = fd.choices ? fd.choices() : JOB_DEFAULT_FIELDS[fd.f], jobVal = state.job[fd.f];
     const own = line[fd.f]!==null && line[fd.f]!==undefined && line[fd.f]!=='';
     const o = [`<option value=""${own?'':' selected'}>${esc(opts[jobVal])}</option>`]
       .concat(Object.entries(opts).filter(([k])=>k!==jobVal).map(([k,l])=>`<option value="${esc(k)}"${own&&line[fd.f]===k?' selected':''}>${esc(l)}</option>`));
@@ -1291,10 +1330,24 @@ function renderSettings(){
       });
     });
     if (s.tracks) html += tracksHtml();
+    if (s.customDoors) html += customDoorsHtml();
     html += `</section>`;
   });
   $('tab-content').innerHTML = html;
   updateSaveBar();
+}
+function customDoorsHtml(){
+  const list = customDoors();
+  return `<h3 class="set-sub">Extra doors</h3>
+    <p class="muted small" style="margin-bottom:8px">Add any other door you need. Each one appears in the Door list on Singles, Doubles and Wardrobe slider lines.</p>
+    ${list.length?`<div class="cd-row set-head" style="border-bottom:2px solid var(--ink)"><div>Door name</div><div style="text-align:right">Cost</div><div style="text-align:right">Markup %</div><div></div></div>`:''}
+    ${list.map(d=>{ const q = state.pricing[d.key]; return `<div class="cd-row">
+      <input type="text" aria-label="Door name" placeholder="e.g. Fire rated 1980H" data-cd="${esc(d.key)}" data-cdf="name" value="${esc(q.name||'')}">
+      <div class="money-input"><span>$</span><input class="num" type="number" step="0.01" min="0" aria-label="Door cost" data-cd="${esc(d.key)}" data-cdf="value" value="${esc(q.value)}"></div>
+      <input class="num" type="number" step="1" aria-label="Door markup %" data-cd="${esc(d.key)}" data-cdf="markup" placeholder="${esc(state.business.defaultMarkup)}" value="${q.markup===null||q.markup===undefined?'':esc(q.markup)}">
+      <button class="icon-btn" type="button" data-delcd="${esc(d.key)}" aria-label="Remove ${esc(d.name)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+    </div>`; }).join('')}
+    <div class="actions" style="margin-top:12px"><button class="btn" type="button" data-addcd="1">Add extra door</button></div>`;
 }
 function tracksHtml(){
   return `<h3 class="set-sub">Robemaker tracks</h3>
@@ -1315,6 +1368,10 @@ function onSettingsInput(e){
   if (el.dataset.price){ const p = state.pricing[el.dataset.price]; p.value = el.value===''?0:Number(el.value); markDirty(); }
   else if (el.dataset.markup){ const p = state.pricing[el.dataset.markup]; p.markup = el.value===''?null:Number(el.value); markDirty(); }
   else if (el.dataset.biz){ state.business[el.dataset.biz] = el.type==='number' ? (el.value===''?'':Number(el.value)) : el.value; markDirty(); }
+  else if (el.dataset.cd){
+    const q = state.pricing[el.dataset.cd], f = el.dataset.cdf;
+    if (q){ if (f==='name') q.name = el.value; else if (f==='markup') q.markup = el.value===''?null:Number(el.value); else q.value = el.value===''?0:Number(el.value); markDirty(); }
+  }
   else if (el.dataset.track!==undefined){
     const t = state.tracks[Number(el.dataset.track)], f = el.dataset.tf;
     if (f==='type') t.type = el.value; else if (f==='markup') t.markup = el.value===''?null:Number(el.value); else t[f] = el.value===''?0:Number(el.value);
@@ -1446,6 +1503,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (e.target.id==='btn-download') return downloadQuote(e.target);
     if (e.target.id==='btn-docket') return printDocket();
     if (e.target.id==='btn-save-quote') return saveQuote();
+    if (e.target.closest('[data-addcd]')){ state.pricing['custom.door.'+uid()] = {value:0, markup:null, name:''}; markDirty(); renderSettings(); const ns=document.querySelectorAll('[data-cdf="name"]'); if (ns.length) ns[ns.length-1].focus(); return; }
+    const dcd = e.target.closest('[data-delcd]');
+    if (dcd){ delete state.pricing[dcd.dataset.delcd]; markDirty(); renderSettings(); return; }
     const at = e.target.closest('[data-addtrack]');
     if (at){ state.tracks.push({type:at.dataset.addtrack, length:0, value:0, markup:null}); markDirty(); renderSettings(); const ins=document.querySelectorAll('[data-tf="length"]'); if (ins.length) ins[ins.length-1].focus(); return; }
     const dt = e.target.closest('[data-deltrack]');
