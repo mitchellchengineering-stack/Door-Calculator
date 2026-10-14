@@ -402,6 +402,9 @@ const TRACK_TYPES = {double:'Double track', triple:'Triple track'};
 const YESNO = {no:'No', yes:'Yes'};
 const DOOR_COUNTS = {'2':'2 doors','3':'3 doors','4':'4 doors','5':'5 doors'};
 const HKEYS = Object.keys(HEIGHTS);
+const WIDTHS = {std:'410-810W', w860:'860W', w910:'910W'};
+const WIDTH_NAMES = {std:'410-810mm wide', w860:'860mm wide', w910:'910mm wide'};
+function wsuf(w){ return (w && w!=='std') ? '.'+w : ''; }
 
 /* ---------- Pricing schema (what Settings shows) ---------- */
 function jm(h, head){ return Math.round((2*Number(h)/1000 + head)*10)/10; }
@@ -409,10 +412,14 @@ const SCHEMA = (() => {
   const S = [];
   const m = (key,label,unit='each') => ({key,label,kind:'money',unit});
   const n = (key,label,unit,def) => ({key,label,kind:'number',unit,def});
-  const doors = [];
-  for (const [s,sl] of Object.entries(SUPPLIERS)) for (const h of HKEYS) for (const [st,stl] of Object.entries(DOOR_STYLES))
-    doors.push(m(`door.${s}.${h}.${st}`, `${sl} ${h}H ${stl.toLowerCase()} door`));
-  S.push({id:'doors', title:'Doors', note:'What each supplier charges you per door. Use Extra doors at the bottom for any other door you need.', groups:[{rows:doors}], customDoors:true});
+  const doorGroups = [];
+  for (const [s,sl] of Object.entries(SUPPLIERS)) for (const [w,wl] of Object.entries(WIDTHS)){
+    const rows = [];
+    for (const h of HKEYS) for (const [st,stl] of Object.entries(DOOR_STYLES))
+      rows.push(m(`door.${s}.${h}.${st}${wsuf(w)}`, `${sl} ${h}H ${stl.toLowerCase()} door, ${wl}`));
+    doorGroups.push({title:`${sl} doors, ${WIDTH_NAMES[w]}`, rows});
+  }
+  S.push({id:'doors', title:'Doors', note:'What each supplier charges you per door. Each supplier has a price for 410-810mm wide doors, and a separate price for 860mm and 910mm wide. Use Extra doors at the bottom for any other door you need.', groups:doorGroups, customDoors:true});
 
   S.push({id:'jambs', title:'Jambs and stops', note:'Price per lineal metre.', groups:[{rows:[
     m('jamb.flat18','18mm flat jamb, 4x2 framing','per metre'), m('jamb.grooved30','30mm grooved jamb, 4x2 framing','per metre'),
@@ -445,11 +452,15 @@ const SCHEMA = (() => {
   S.push({id:'magnets', title:'Magnets', note:'The magnet cost is built into the price of double doors and single dummy doors. It doesn\u2019t show as a separate item on the quote.', groups:[
     {rows:[m('magnet','Magnet','each')]},
     {title:'Magnets per door', rows:[n('magnet.qty.double','Double doors (per pair)','magnets',4), n('magnet.qty.dummy','Single dummy door','magnets',2)]}]});
-  S.push({id:'cavity', title:'Cavity sliders', note:'Soft close kit, cavity units and steel inserts for each cavity supplier. Units and steel inserts are priced by height and by plain or grooved. Pick the supplier on each cavity slider line.', groups:[
+  const cavUnits = cl => HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.${cl}.unit.${h}.${st}`,`${h}H ${sl.toLowerCase()}`,'per pocket')));
+  const cavDoors = (cl, pre, label) => Object.entries(WIDTHS).map(([w,wl])=>({title:`${label}, ${WIDTH_NAMES[w]}`, rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.${cl}.${pre}.${h}.${st}${wsuf(w)}`,`${h}H ${sl.toLowerCase()} ${pre==='leaf'?'door leaf':'door'}, ${wl}`,'per door')))}));
+  S.push({id:'cavity', title:'Cavity sliders', note:'A cavity slider is the pocket plus the door. Humes supply both, priced separately here. Cowdroy supply the pocket only, and Superior supply the door leaf routed for it. Steel inserts are Humes only. Pick the supplier on each cavity slider line.', groups:[
     {title:'Soft close kits', rows:Object.entries(CAVITY_SUPPLIERS).map(([cs,cl])=>m(`cavity.${cs}.softClose`,`${cl} soft close kit`))},
-    ...Object.entries(CAVITY_SUPPLIERS).flatMap(([cs,cl])=>[
-      {title:`${cl} cavity slider units`, rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.${cs}.unit.${h}.${st}`,`${h}H ${sl.toLowerCase()}`)))},
-      {title:`${cl} steel inserts`, rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.${cs}.steel.${h}.${st}`,`${h}H ${sl.toLowerCase()} door`,'per door')))}])]});
+    {title:'Humes cavity pockets', rows:cavUnits('humes')},
+    ...cavDoors('humes','door','Humes cavity slider doors'),
+    {title:'Humes steel inserts', rows:HKEYS.flatMap(h=>Object.entries(STYLES).map(([st,sl])=>m(`cavity.humes.steel.${h}.${st}`,`${h}H ${sl.toLowerCase()} door`,'per door')))},
+    {title:'Cowdroy cavity pockets', rows:cavUnits('cowdroy')},
+    ...cavDoors('cowdroy','leaf','Superior door leaves routed for Cowdroy pockets')]});
 
   S.push({id:'wardrobe', title:'Wardrobe sliders', note:'Routing fee for each supplier, bottom packers and Robemaker tracks. Add triple track lengths once you\u2019ve confirmed them with your supplier.', groups:[{rows:[
     m('wardrobe.routing.superior','Routing for wheels, Superior','per door'), m('wardrobe.routing.humes','Routing for wheels, Humes','per door'),
@@ -546,34 +557,34 @@ function tracksOf(type){ return state.tracks.filter(t=>t.type===type && Number(t
 const isCustom = s => String(s||'').indexOf('custom.door.')===0;
 function customDoors(){ return Object.entries(state.pricing).filter(([k])=>isCustom(k)).map(([k,q])=>({key:k, name:q.name||'Unnamed door'})); }
 function customChoices(){ const o = {}; customDoors().forEach(d=>{ o[d.key] = d.name; }); return o; }
-function doorKey(st,h){ return isCustom(st) ? st : `door.${state.job.supplier}.${h}.${st}`; }
+function doorKey(st,h,w){ return isCustom(st) ? st : `door.${state.job.supplier}.${h}.${st}${wsuf(w)}`; }
 function jambKey(j, framing){ return framing==='6x2' ? `jamb.${j}.6x2` : `jamb.${j}`; }
 const hingedStyle = {f:'style',label:'Door',inherit:true,choices:()=>({...DOOR_STYLES, ...customChoices()})};
 const LINE_TYPES = {
   single: {title:'Singles', one:'single door', addLabel:'Add single door line', intro:'Single hinged doors. Handles and door stops go on the Hardware tab. Set Dummy door to Yes for doors held shut with magnets.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',dummy:'no',colour:null}),
+    blank:()=>({qty:1,width:'std',height:null,style:null,jamb:null,framing:'4x2',dummy:'no',colour:null}),
     fields:[
       {f:'qty',label:'Quantity',kind:'int',min:1},
-      {f:'height',label:'Height',inherit:true},hingedStyle,{f:'jamb',label:'Jamb',inherit:true},
+      {f:'height',label:'Height',inherit:true},{f:'width',label:'Door width',opts:WIDTHS},hingedStyle,{f:'jamb',label:'Jamb',inherit:true},
       {f:'framing',label:'Framing',opts:FRAMINGS},{f:'dummy',label:'Dummy door (magnets)',opts:YESNO},{f:'colour',label:'Hinge colour',inherit:true}]},
   double: {title:'Doubles', one:'double door', addLabel:'Add double door line', intro:'Pairs of hinged doors, including double wardrobe doors.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',colour:null}),
+    blank:()=>({qty:1,width:'std',height:null,style:null,jamb:null,framing:'4x2',colour:null}),
     fields:[
       {f:'qty',label:'Quantity (pairs)',kind:'int',min:1},
-      {f:'height',label:'Height',inherit:true},{...hingedStyle,label:'Doors'},{f:'jamb',label:'Jamb',inherit:true},
+      {f:'height',label:'Height',inherit:true},{f:'width',label:'Door width',opts:WIDTHS},{...hingedStyle,label:'Doors'},{f:'jamb',label:'Jamb',inherit:true},
       {f:'framing',label:'Framing',opts:FRAMINGS},{f:'colour',label:'Hinge colour',inherit:true}]},
   cavity: {title:'Cavity sliders', one:'cavity slider', addLabel:'Add cavity slider line', intro:'Pick the cavity supplier and the cropping for the handle that will be fitted. The handles themselves go on the Hardware tab.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',cavSupplier:'humes',softClose:'no',steel:'no',handle:'roundPassage'}),
+    blank:()=>({qty:1,width:'std',height:null,style:null,jamb:null,framing:'4x2',cavSupplier:'humes',softClose:'no',steel:'no',handle:'roundPassage'}),
     fields:[
       {f:'qty',label:'Quantity',kind:'int',min:1},{f:'cavSupplier',label:'Cavity supplier',opts:CAVITY_SUPPLIERS},
-      {f:'height',label:'Height',inherit:true},{f:'style',label:'Door',inherit:true},{f:'jamb',label:'Jamb',inherit:true},
+      {f:'height',label:'Height',inherit:true},{f:'width',label:'Door width',opts:WIDTHS},{f:'style',label:'Door',inherit:true},{f:'jamb',label:'Jamb',inherit:true},
       {f:'framing',label:'Framing',opts:FRAMINGS},
-      {f:'softClose',label:'Soft close',opts:YESNO},{f:'steel',label:'Steel insert',opts:YESNO},{f:'handle',label:'Cropping',opts:CAVITY_CROPS}]},
+      {f:'softClose',label:'Soft close',opts:YESNO},{f:'steel',label:'Steel insert (Humes only)',opts:YESNO,show:l=>l.cavSupplier!=='cowdroy'},{f:'handle',label:'Cropping',opts:CAVITY_CROPS}]},
   wardrobe: {title:'Wardrobe sliders', one:'wardrobe slider', addLabel:'Add wardrobe slider line', intro:'Doors, jamb, bottom packer and a Robemaker track. Routing is priced by the door supplier on Job details. Pick the cropping here; the handles go on the Hardware tab.',
-    blank:()=>({qty:1,height:null,style:null,jamb:null,framing:'4x2',doors:'2',track:'double',trackLength:null,handle:'round'}),
+    blank:()=>({qty:1,width:'std',height:null,style:null,jamb:null,framing:'4x2',doors:'2',track:'double',trackLength:null,handle:'round'}),
     fields:[
       {f:'qty',label:'Openings',kind:'int',min:1},
-      {f:'height',label:'Height',inherit:true},{f:'style',label:'Doors',inherit:true,choices:()=>({...STYLES, ...customChoices()})},
+      {f:'height',label:'Height',inherit:true},{f:'width',label:'Door width',opts:WIDTHS},{f:'style',label:'Doors',inherit:true,choices:()=>({...STYLES, ...customChoices()})},
       {f:'jamb',label:'Jamb',inherit:true},{f:'framing',label:'Framing',opts:FRAMINGS},
       {f:'doors',label:'Doors per opening',opts:DOOR_COUNTS},{f:'track',label:'Track',opts:TRACK_TYPES},
       {f:'trackLength',label:'Track length',kind:'track'},{f:'handle',label:'Cropping',opts:WARDROBE_CROPS}]}
@@ -585,7 +596,7 @@ function calcLine(type, line){
   const h = r(line,'height'), st = r(line,'style');
   if (type==='single' || type==='double'){
     const leaves = type==='double' ? 2 : 1, j = r(line,'jamb');
-    add(a, doorKey(st,h), leaves);
+    add(a, doorKey(st,h,line.width), leaves);
     add(a, jambKey(j,line.framing), val(`m.jamb.${type}.${h}`));
     add(a, 'stop.perMetre', val(`m.stop.${type}.${h}`));
     add(a, `hinge.${r(line,'colour')}`, val(`hinge.qty.${h}`)*leaves);
@@ -596,9 +607,12 @@ function calcLine(type, line){
   } else if (type==='cavity'){
     const j = r(line,'jamb');
     const cs = line.cavSupplier==='cowdroy' ? 'cowdroy' : 'humes';
-    add(a, doorKey(st,h), 1);
+    const w = wsuf(line.width);
+    /* Humes supply pocket and door. Cowdroy supply the pocket, Superior supply the routed door leaf. */
+    if (cs==='cowdroy') add(a, `cavity.cowdroy.leaf.${h}.${st}${w}`, 1);
+    else add(a, `cavity.humes.door.${h}.${st}${w}`, 1);
     add(a, `cavity.${cs}.unit.${h}.${st}`, 1);
-    if (line.steel==='yes') add(a, `cavity.${cs}.steel.${h}.${st}`, 1);
+    if (cs==='humes' && line.steel==='yes') add(a, `cavity.humes.steel.${h}.${st}`, 1);
     add(a, jambKey(j,line.framing), val(`m.jamb.cavity.${h}`));
     add(a, 'stop.perMetre', val(`m.stop.cavity.${h}`));
     if (line.softClose==='yes'){ add(a,`cavity.${cs}.softClose`,1); add(a,`labour.softClose.${h}`,1); }
@@ -607,7 +621,7 @@ function calcLine(type, line){
     if (j==='grooved30') add(a, 'labour.groovedJamb.cavity', 1);
   } else if (type==='wardrobe'){
     const d = Number(line.doors)||2;
-    add(a, doorKey(st,h), d);
+    add(a, doorKey(st,h,line.width), d);
     add(a, `wardrobe.routing.${job.supplier}`, d);
     add(a, jambKey(r(line,'jamb'), line.framing), val(`m.jamb.double.${h}`));
     add(a, 'stop.perMetre', val('m.stop.wardrobe'));
@@ -632,18 +646,19 @@ function styleText(st, plural){
 function describeLine(type, line, withHardware=true){
   const h = r(line,'height'), st = r(line,'style'), col = COLOURS[r(line,'colour')];
   const fr = line.framing==='6x2' ? '6x2 framing' : null;
+  const wd = (line.width && line.width!=='std' && !isCustom(st)) ? WIDTH_NAMES[line.width] : null;
   if (type==='single' || type==='double'){
-    const bits = [styleText(st, type==='double'), type==='single' && line.dummy==='yes' ? 'Dummy door' : null, JAMBS[r(line,'jamb')], fr, `${col} hinges`].filter(Boolean);
+    const bits = [styleText(st, type==='double'), wd, type==='single' && line.dummy==='yes' ? 'Dummy door' : null, JAMBS[r(line,'jamb')], fr, `${col} hinges`].filter(Boolean);
     return {title:`${type==='double'?'Double hinged doors':'Single hinged door'}, ${h}H`, spec:bits.join(' \u00b7 ')};
   }
   if (type==='cavity'){
-    const bits = [styleText(st, false), JAMBS[r(line,'jamb')], fr];
+    const bits = [styleText(st, false), wd, JAMBS[r(line,'jamb')], fr];
     if (line.softClose==='yes') bits.push('Soft close');
-    if (line.steel==='yes') bits.push('Steel insert');
+    if (line.steel==='yes' && line.cavSupplier!=='cowdroy') bits.push('Steel insert');
     return {title:`Cavity slider, ${h}H`, spec:bits.filter(Boolean).join(' \u00b7 ')};
   }
   const tr = selectedTrack(line);
-  const bits = [styleText(st, true), JAMBS[r(line,'jamb')], fr, tr ? `${tr.length} ${TRACK_TYPES[tr.type].toLowerCase()}` : TRACK_TYPES[line.track]].filter(Boolean);
+  const bits = [styleText(st, true), wd, JAMBS[r(line,'jamb')], fr, tr ? `${tr.length} ${TRACK_TYPES[tr.type].toLowerCase()}` : TRACK_TYPES[line.track]].filter(Boolean);
   return {title:`Wardrobe slider, ${line.doors} doors, ${h}H`, spec:bits.join(' \u00b7 ')};
 }
 
@@ -1082,6 +1097,7 @@ function figuresHtml(type,line){
     + (miss.length ? `<div class="line-missing">No price set for: ${esc(miss.slice(0,3).join(', '))}${miss.length>3?` and ${miss.length-3} more`:''}</div>` : '');
 }
 function fieldHtml(type,line,fd){
+  if (fd.show && !fd.show(line)) return '';
   const id = `f-${line.id}-${fd.f}`, attrs = `data-line="${line.id}" data-type="${type}" data-field="${fd.f}"`;
   if (fd.kind==='int') return `<div class="field"><label for="${id}">${fd.label}</label><input id="${id}" type="number" inputmode="numeric" min="${fd.min}" step="1" value="${esc(line[fd.f])}" ${attrs}></div>`;
   if (fd.inherit){
